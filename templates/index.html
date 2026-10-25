@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Petroleum Economic Indicators | Automated Field Evaluation</title>
+  <meta name="description" content="Executive petroleum economics evaluation suite for cash flow modeling, NPV, IRR, payback, incremental analysis, and output ZIP export.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body class="dark-theme">
+  <!-- Background Glow Accents -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">PetroEcon <span>Analytics</span></h1>
+          <p class="brand-subtitle">Oil & Gas Field Development Economic Evaluation Engine</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <a href="/api/download-template" class="btn btn-outline" id="btnDownloadTemplate" title="Download sample template workbook">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          Template (.xlsx)
+        </a>
+        <button class="btn btn-secondary" id="btnSampleRun" title="Instant run using default field dataset">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          Quick Sample Demo
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="main-container">
+
+    <!-- Upload & Configuration Card -->
+    <section class="card upload-card" id="uploadSection">
+      <div class="card-header">
+        <div class="badge badge-accent">Step 1: Dataset Ingestion</div>
+        <h2 class="card-title">Upload Field Economic Dataset</h2>
+        <p class="card-description">Upload your standard petroleum evaluation Excel template (.xlsx, .xls, .xlsm) with production, investment, and fiscal terms.</p>
+      </div>
+
+      <div class="upload-dropzone" id="dropzone">
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.xlsm" class="file-input-hidden">
+        <div class="dropzone-content">
+          <div class="upload-icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="upload-icon">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="12" y1="18" x2="12" y2="12"/>
+              <line x1="9" y1="15" x2="12" y2="12"/>
+              <line x1="15" y1="15" x2="12" y2="12"/>
+            </svg>
+          </div>
+          <div class="dropzone-text">
+            <h3>Drag & Drop your Excel workbook here</h3>
+            <p>or <span class="highlight-browse">browse files</span> from your computer</p>
+            <span class="file-hints">Supported: Excel 97-2003 (.xls), Excel Workbook (.xlsx, .xlsm)</span>
+          </div>
+        </div>
+        <div class="selected-file-info" id="selectedFileInfo" style="display: none;">
+          <div class="file-details">
+            <div class="file-icon">📊</div>
+            <div>
+              <div class="file-name" id="selectedFileName">filename.xlsx</div>
+              <div class="file-size" id="selectedFileSize">0 KB</div>
+            </div>
+          </div>
+          <button type="button" class="btn-icon-danger" id="btnRemoveFile" title="Remove file">&times;</button>
+        </div>
+      </div>
+
+      <!-- Advanced Configuration Accordion -->
+      <div class="config-accordion">
+        <button type="button" class="accordion-toggle" id="btnToggleConfig">
+          <span>⚙️ Optional Parameters & Fiscal Switches</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="chevron-icon">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+        <div class="accordion-panel" id="configPanel">
+          <div class="grid-form">
+            <div class="form-group">
+              <label for="cfgDiscountRate">Discount Rate Override (%)</label>
+              <input type="number" step="0.1" min="0" max="100" id="cfgDiscountRate" placeholder="e.g. 10.0 (Leave blank for workbook rate)" class="form-input">
+              <span class="form-hint">Blank defaults to the discount rate defined in the workbook.</span>
+            </div>
+            <div class="form-group">
+              <label for="cfgCapitalBudget">Capital Budget Constraint ($MM)</label>
+              <input type="number" step="1" min="0" id="cfgCapitalBudget" placeholder="e.g. 150 (Leave blank for unlimited)" class="form-input">
+              <span class="form-hint">Filters alternatives exceeding capital allocation.</span>
+            </div>
+            <div class="form-group form-group-checkbox">
+              <label class="checkbox-label">
+                <input type="checkbox" id="cfgEconomicCutoff">
+                <span class="checkbox-custom"></span>
+                <span class="checkbox-text">
+                  <strong>Economic Limit Abandonment</strong>
+                  <small>Abandon production when operating margin (revenue - opex) turns negative.</small>
+                </span>
+              </label>
+            </div>
+            <div class="form-group form-group-checkbox">
+              <label class="checkbox-label">
+                <input type="checkbox" id="cfgPriceEscalation">
+                <span class="checkbox-custom"></span>
+                <span class="checkbox-text">
+                  <strong>Apply Price Escalation</strong>
+                  <small>Compound oil & gas price escalation factors annually over project life.</small>
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit / Run Action -->
+      <div class="upload-actions">
+        <button type="button" class="btn btn-primary btn-lg" id="btnRunAnalysis" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          Execute Economic Evaluation
+        </button>
+      </div>
+
+      <!-- Execution Progress Loader -->
+      <div class="run-loader" id="runLoader" style="display: none;">
+        <div class="spinner"></div>
+        <div class="loader-text">
+          <h4 id="loaderStatus">Processing dataset...</h4>
+          <p id="loaderSubtext">Parsing template, building annual cash flows, simulating alternatives & generating charts...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Error Banner -->
+    <div class="alert alert-danger" id="errorBanner" style="display: none;">
+      <div class="alert-icon">⚠️</div>
+      <div class="alert-content">
+        <h4 id="errorTitle">Evaluation Error</h4>
+        <p id="errorMessage">An error occurred during evaluation.</p>
+      </div>
+      <button class="alert-close" onclick="this.parentElement.style.display='none'">&times;</button>
+    </div>
+
+    <!-- Results Section (Visible after calculation) -->
+    <div id="resultsSection" style="display: none;">
+
+      <!-- Executive Recommendation Header & Export Toolbar -->
+      <section class="card executive-banner-card">
+        <div class="banner-top">
+          <div class="project-identity">
+            <span class="badge badge-success">Evaluation Completed</span>
+            <h2 class="project-title" id="resProjectName">Field Development Study</h2>
+            <div class="project-meta" id="resProjectMeta">20 Years Life | 10.0% Discount Rate | 40% Tax</div>
+          </div>
+          
+          <!-- PRIVILEGE TO SAVE ZIP ACTIONS -->
+          <div class="export-actions">
+            <!-- 1. Native Save-As dialog with File System Access API -->
+            <button class="btn btn-gradient btn-lg" id="btnSaveZipPicker" title="Pick folder on your computer and save ZIP">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+              </svg>
+              Select Location & Save ZIP
+            </button>
+            
+            <!-- 2. Save directly to PC Folder path Modal -->
+            <button class="btn btn-secondary" id="btnSaveToFolderModal" title="Save directly to a custom Windows directory">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              </svg>
+              Save to Local Path...
+            </button>
+
+            <!-- 3. Direct browser download -->
+            <a href="#" class="btn btn-outline" id="btnDirectDownloadZip" title="Standard browser download">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+              </svg>
+              Direct ZIP (.zip)
+            </a>
+
+            <!-- 4. Excel Workbook -->
+            <a href="#" class="btn btn-outline" id="btnDownloadExcel" title="Download consolidated Excel results workbook">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <line x1="3" y1="9" x2="21" y2="9"/>
+                <line x1="9" y1="21" x2="9" y2="9"/>
+              </svg>
+              Results Excel (.xlsx)
+            </a>
+          </div>
+        </div>
+
+        <!-- Decision Box -->
+        <div class="recommendation-callout">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <span class="callout-label">Official Economic Recommendation</span>
+            <h3 class="callout-title" id="resRecommendation">Optimal Case</h3>
+            <p class="callout-reason" id="resRecommendationReason">NPV-maximizing case confirmed by incremental analysis.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- KPI Metrics Row -->
+      <section class="kpi-grid">
+        <div class="kpi-card" id="kpiNpvCard">
+          <div class="kpi-label">Net Present Value (NPV)</div>
+          <div class="kpi-value" id="kpiNpv">$0.00 MM</div>
+          <div class="kpi-status" id="kpiNpvStatus">Status</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">Internal Rate of Return (IRR)</div>
+          <div class="kpi-value" id="kpiIrr">0.0%</div>
+          <div class="kpi-status" id="kpiMirr">MIRR: 0.0%</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">Payback Period (Payout)</div>
+          <div class="kpi-value" id="kpiPayback">0.00 yrs</div>
+          <div class="kpi-status" id="kpiDiscPayback">Disc. Payback: 0.00 yrs</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">Profit / Investment (PIR)</div>
+          <div class="kpi-value" id="kpiPir">0.000</div>
+          <div class="kpi-status" id="kpiPi">PI: 0.000</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">Initial CAPEX</div>
+          <div class="kpi-value" id="kpiCapex">$0.00 MM</div>
+          <div class="kpi-status" id="kpiWells">0 Wells</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">Recommended Development</div>
+          <div class="kpi-value text-accent" id="kpiWinner">Template</div>
+          <div class="kpi-status" id="kpiWinnerNpv">Winner NPV</div>
+        </div>
+      </section>
+
+      <!-- Results Tabbed Explorer -->
+      <section class="card tabs-card">
+        <nav class="tabs-nav" id="resultsTabs">
+          <button class="tab-btn active" data-tab="tabScreening">Screening & Verification</button>
+          <button class="tab-btn" data-tab="tabCashFlow">Cash Flow Model</button>
+          <button class="tab-btn" data-tab="tabProfiles">NPV & Payback Curves</button>
+          <button class="tab-btn" data-tab="tabAlternatives">Alternatives & Incremental</button>
+          <button class="tab-btn" data-tab="tabSensitivity">Sensitivity Analysis</button>
+          <button class="tab-btn" data-tab="tabStartup">Startup Delay Risk</button>
+          <button class="tab-btn" data-tab="tabGallery">Figure Gallery</button>
+          <button class="tab-btn" data-tab="tabLogs">Run Logs & Manifest</button>
+        </nav>
+
+        <!-- Tab 1: Screening & Verification -->
+        <div class="tab-content active" id="tabScreening">
+          <div class="content-header">
+            <h3>Economic Screening Indicators</h3>
+            <p>Investment hurdle checks and criteria satisfaction for the base development plan.</p>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table" id="tableScreening">
+              <thead>
+                <tr>
+                  <th>Indicator</th>
+                  <th>Calculated Value</th>
+                  <th>Acceptance Criterion</th>
+                  <th>Verdict</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="dual-columns mt-6">
+            <div class="column-card">
+              <h4>Capex Capital Breakdown ($MM)</h4>
+              <div class="table-responsive">
+                <table class="data-table" id="tableCapex">
+                  <thead>
+                    <tr><th>Component</th><th>Amount ($MM)</th></tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="column-card" id="verificationCol">
+              <h4>Workbook Verification Check</h4>
+              <p class="text-muted text-sm">Cross-referencing Python model against template workbook calculations.</p>
+              <div class="table-responsive">
+                <table class="data-table" id="tableVerification">
+                  <thead>
+                    <tr><th>Metric</th><th>Python</th><th>Workbook</th><th>Difference</th><th>Match</th></tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Cash Flow Model -->
+        <div class="tab-content" id="tabCashFlow">
+          <div class="content-header">
+            <h3>Annual Cash Flow Schedule ($MM)</h3>
+            <p>Detailed breakdown of production, gross revenue, capital expenditures, operating costs, depreciation, taxes, and net cash flow.</p>
+          </div>
+
+          <div class="figure-wrapper">
+            <img id="figDiscountAndPv" src="" alt="Undiscounted vs Present Value Flows" class="chart-img">
+          </div>
+
+          <div class="table-responsive mt-6">
+            <table class="data-table" id="tableCashFlow">
+              <thead>
+                <tr>
+                  <th>Year</th>
+                  <th>Proj Year</th>
+                  <th>Oil (MMB)</th>
+                  <th>Gas (BCF)</th>
+                  <th>Revenue ($MM)</th>
+                  <th>CAPEX ($MM)</th>
+                  <th>OPEX ($MM)</th>
+                  <th>Depr ($MM)</th>
+                  <th>Tax ($MM)</th>
+                  <th>NCF ($MM)</th>
+                  <th>Cum NCF ($MM)</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab 3: Profiles & Valuation -->
+        <div class="tab-content" id="tabProfiles">
+          <div class="content-header">
+            <h3>Valuation & Payback Profiles</h3>
+            <p>NPV profile curve across discount rates (with IRR zero crossings) and cumulative cash flow payback trajectories.</p>
+          </div>
+          <div class="grid-2-col">
+            <div class="chart-card">
+              <h4>NPV Profile Curve</h4>
+              <p class="chart-desc">Shows sensitivity to discount rate and identifies all IRR roots.</p>
+              <img id="figNpvProfile" src="" alt="NPV Profile Curve" class="chart-img">
+            </div>
+            <div class="chart-card">
+              <h4>Cumulative Payback Curves</h4>
+              <p class="chart-desc">Undiscounted and discounted cumulative cash flows with break-even markers.</p>
+              <img id="figPaybackCurves" src="" alt="Payback Curves" class="chart-img">
+            </div>
+          </div>
+
+          <div class="chart-card mt-6">
+            <h4>Present-Value Component Build-up</h4>
+            <img id="figNpvComponents" src="" alt="NPV Component Build-up" class="chart-img">
+          </div>
+        </div>
+
+        <!-- Tab 4: Alternatives & Incremental -->
+        <div class="tab-content" id="tabAlternatives">
+          <div class="content-header">
+            <h3>Development Scale Alternatives</h3>
+            <p>Evaluation of mutually exclusive development options by scaling well count, facilities, and production capacity.</p>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table" id="tableAlternatives">
+              <thead>
+                <tr>
+                  <th>Alternative</th>
+                  <th>Wells</th>
+                  <th>Capex ($MM)</th>
+                  <th>NPV ($MM)</th>
+                  <th>IRR</th>
+                  <th>MIRR</th>
+                  <th>Payback (yr)</th>
+                  <th>PI</th>
+                  <th>PIR</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="figure-wrapper mt-6">
+            <img id="figAlternatives" src="" alt="Alternatives Comparison" class="chart-img">
+          </div>
+
+          <div class="content-header mt-8">
+            <h3>Incremental (Delta) Analysis Chain</h3>
+            <p>Stepwise walking from smallest to largest capital development, testing if incremental capital adds positive NPV.</p>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table" id="tableIncremental">
+              <thead>
+                <tr>
+                  <th>Increment</th>
+                  <th>Delta Capex ($MM)</th>
+                  <th>Delta NPV ($MM)</th>
+                  <th>Delta IRR</th>
+                  <th>Delta MIRR</th>
+                  <th>Delta PIR</th>
+                  <th>Decision</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab 5: Sensitivity Analysis -->
+        <div class="tab-content" id="tabSensitivity">
+          <div class="content-header">
+            <h3>Sensitivity Analysis (Spider & Tornado Diagrams)</h3>
+            <p>Evaluates sensitivity of the recommended case to swings in oil price, production rate, CAPEX, and OPEX.</p>
+          </div>
+
+          <div class="figure-wrapper">
+            <img id="figSensitivity" src="" alt="Sensitivity Spider and Tornado" class="chart-img">
+          </div>
+
+          <div class="table-responsive mt-6">
+            <table class="data-table" id="tableSensitivity">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Low Case</th>
+                  <th>NPV @ Low ($MM)</th>
+                  <th>High Case</th>
+                  <th>NPV @ High ($MM)</th>
+                  <th>NPV Swing Range ($MM)</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab 6: Startup Delay Risk -->
+        <div class="tab-content" id="tabStartup">
+          <div class="content-header">
+            <h3>Project Sanction Delay Impact</h3>
+            <p>Financial impact of postponing project commissioning by 1 to 5 years (cost of delay & payback deferral).</p>
+          </div>
+
+          <div class="figure-wrapper">
+            <img id="figStartupDelay" src="" alt="Startup Delay Impact" class="chart-img">
+          </div>
+
+          <div class="table-responsive mt-6">
+            <table class="data-table" id="tableStartupDelay">
+              <thead>
+                <tr>
+                  <th>Delay (Years)</th>
+                  <th>NPV ($MM)</th>
+                  <th>IRR</th>
+                  <th>MIRR</th>
+                  <th>Payback from Today (yr)</th>
+                  <th>Payback from Startup (yr)</th>
+                  <th>PIR</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab 7: Visual Gallery -->
+        <div class="tab-content" id="tabGallery">
+          <div class="content-header">
+            <h3>High-Resolution Engineering Plot Gallery</h3>
+            <p>Click on any figure to view or save individual high-definition 160-DPI charts.</p>
+          </div>
+          <div class="gallery-grid" id="galleryContainer"></div>
+        </div>
+
+        <!-- Tab 8: Run Logs & Manifest -->
+        <div class="tab-content" id="tabLogs">
+          <div class="content-header">
+            <h3>Execution Trace & ZIP Package Manifest</h3>
+            <p>Detailed engine log and inventory of all generated tables, workbooks, and figures included in the ZIP archive.</p>
+          </div>
+          <div class="log-viewer">
+            <pre id="runLogViewer">No run logged yet.</pre>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- SAVE TO LOCAL FOLDER MODAL -->
+  <div class="modal-backdrop" id="saveFolderModal" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon">📁</div>
+          <div>
+            <h3 class="modal-title">Select Location to Save ZIP</h3>
+            <p class="modal-subtitle">Choose or type a folder on your computer to save all evaluation outputs.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close" id="btnCloseSaveModal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <label class="modal-label">Quick Destination Presets</label>
+        <div class="preset-buttons-group" id="presetButtonsGroup">
+          <button type="button" class="btn btn-preset" data-path="Desktop">🖥️ Desktop</button>
+          <button type="button" class="btn btn-preset" data-path="Downloads">📥 Downloads</button>
+          <button type="button" class="btn btn-preset" data-path="Documents">📄 Documents</button>
+          <button type="button" class="btn btn-preset" data-path="Project Folder">📂 Current Project</button>
+        </div>
+
+        <div class="form-group mt-4">
+          <label for="inputTargetFolder">Destination Folder Path</label>
+          <input type="text" id="inputTargetFolder" class="form-input" placeholder="e.g. C:\Users\YourName\Desktop\Economics_Reports">
+          <span class="form-hint">Folder will be automatically created if it doesn't exist.</span>
+        </div>
+
+        <div class="form-group mt-3">
+          <label for="inputCustomZipName">Zip Archive File Name</label>
+          <input type="text" id="inputCustomZipName" class="form-input" placeholder="output_archive.zip">
+        </div>
+
+        <div class="modal-alert" id="saveModalStatus" style="display: none;"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" id="btnCancelSaveModal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btnConfirmSaveToFolder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          </svg>
+          Save ZIP to this Location
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <div class="footer-container">
+      <p>PetroEcon Analytics Suite &bull; Comprehensive Petroleum Economics, Decision Framework & Output Packaging</p>
+      <p class="text-sm text-muted">Ready for production evaluation and executive presentation.</p>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
