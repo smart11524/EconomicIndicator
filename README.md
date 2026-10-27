@@ -1,4 +1,4 @@
-# Petroleum Economic Indicators Web Application (PetroEcon)
+# ECONOMIC EVALUATION GROUP 2 (FIELD DEVELOPMENT)
 
 A comprehensive Python and Flask-based economic evaluation suite designed for petroleum field development projects. It performs cash flow modeling, fiscal terms analysis, depreciation modeling, sensitivity analysis, and generates interactive reports and downloadable packages.
 

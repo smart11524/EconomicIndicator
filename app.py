@@ -1,5 +1,5 @@
 """
-Petroleum Economic Indicators Web Application
+ECONOMIC EVALUATION GROUP 2 (FIELD DEVELOPMENT) Web Application
 Flask backend serving API endpoints for uploading Excel datasets,
 running evaluations, streaming figures/results, and saving ZIP archives.
 """
@@ -225,5 +225,5 @@ def download_results_excel(run_id):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    print(f"Starting Petroleum Economic Indicators Web App on http://localhost:{port}")
+    print(f"Starting ECONOMIC EVALUATION GROUP 2 (FIELD DEVELOPMENT) Web App on http://localhost:{port}")
     app.run(host="0.0.0.0", port=port, debug=False)

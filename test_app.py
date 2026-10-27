@@ -6,14 +6,14 @@ import tempfile
 import app
 
 def run_tests():
-    print("=== Testing Flask PetroEcon Application ===")
+    print("=== Testing Flask ECONOMIC EVALUATION GROUP 2 (FIELD DEVELOPMENT) Application ===")
     client = app.app.test_client()
 
     # 1. Test GET /
     print("\n1. Testing GET / ...")
     res = client.get("/")
     assert res.status_code == 200, f"Expected 200, got {res.status_code}"
-    assert b"PetroEcon" in res.data, "Brand not found in HTML"
+    assert b"ECONOMIC EVALUATION GROUP 2 (FIELD DEVELOPMENT)" in res.data, "Brand not found in HTML"
     print("[OK] Index page rendered successfully.")
 
     # 2. Test GET /api/preset-paths

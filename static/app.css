@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PetroEcon Analytics - Design System & Stylesheet
+   ECONOMIC EVALUATION GROUP 2 (FIELD DEVELOPMENT) - Design System & Stylesheet
    Modern, executive dark mode styling with glassmorphic accents & micro-animations
    ========================================================================== */
 
@@ -124,9 +124,9 @@ body {
 }
 
 .brand-title {
-  font-size: 1.35rem;
+  font-size: 1.15rem;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   color: #fff;
 }
 

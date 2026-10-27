@@ -1,5 +1,5 @@
 /**
- * PetroEcon Analytics - Client Controller
+ * ECONOMIC EVALUATION GROUP 2 (FIELD DEVELOPMENT) - Client Controller
  * Manages file uploads, run triggers, UI updates, chart display,
  * and saving the complete output ZIP to user-selected locations.
  */
